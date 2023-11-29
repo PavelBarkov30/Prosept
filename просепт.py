@@ -3,22 +3,18 @@ import numpy as np
 import os
 import re
 import nltk
-from sentence_transformers import SentenceTransformer, util
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords as nltk_stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import StandardScaler
 
+# исходим из того,что таблицы для работы к этому этапу имеются целиком
 
-#чтение (хз надо ли)
-def read_data(path):
-    marketing_dealer = pd.read_csv(path , sep = ';')
-    marketing_dealerprice = pd.read_csv(path , sep = ';')
-    marketing_product= pd.read_csv(path, sep = ';', index_col= 0)
+def preprocessing_data(marketing_dealerprice, marketing_product):
+    marketing_dealerprice.drop_duplicates(subset=['product_key', 'product_url', 'product_name'], inplace=True)
+    marketing_dealerprice.reset_index(drop=True, inplace=True)
     marketing_product = marketing_product.dropna(subset='name')
-    marketing_productdealerkey = pd.read_csv(path, engine='python', sep = ';')
-    return marketing_dealer, marketing_dealerprice, marketing_product, marketing_productdealerkey
+    return marketing_dealerprice, marketing_product
 
 # обработка текста
 def lemmatize_text(text):
@@ -62,16 +58,22 @@ def matching_names(marketing_product, marketing_dealerprice, df_1, df_2):
 
 # вывод n-го количества семантически похожих названий
 def top_k_names(df, name, top_k):
-    product_key = marketing_dealerprice[f'{name}']
-    print(df.iloc[[product_key]].sort_values()[:top_k])
+    product_key = marketing_dealerprice.loc[marketing_dealerprice['product_name'] == name, 'product_key']
+    product_key = product_key.to_list()[0] + '_' + str(product_key.index[0])
+    z = df[product_key].sort_values()[:top_k].index.to_list()
+    final = marketing_product.loc[marketing_product['id'].isin(z) , 'name']
+    return final
 
 
+name = input()
 
-marketing_dealer, marketing_dealerprice, marketing_product, marketing_productdealerkey = read_data(path)
+marketing_dealerprice, marketing_product = preprocessing_data(marketing_dealerprice, marketing_product)
 marketing_dealerprice['product_name_lem'] = marketing_dealerprice['product_name'].apply(lemmatize_text)
 marketing_product['name_lem'] = marketing_product['name'].apply(lemmatize_text)
 df_1, df_2 = vectoriz(marketing_dealerprice, marketing_product)
 df = matching_names(marketing_product, marketing_dealerprice, df_1, df_2)
+final_names = top_k_names(df, name, top_k)
+print(final_names)
 
 
 
