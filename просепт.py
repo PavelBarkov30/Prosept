@@ -43,6 +43,7 @@ def vectoriz(marketing_dealerprice, marketing_product):
     df_1 = marketing_dealerprice[['product_name_lem']]
     df_1 = df_1.rename(columns={'product_name': 'name'})
     df_2 = marketing_product[['name_lem']]
+    df_2 = df_1.rename(columns={'name_lem': 'name'})
     df = pd.concat([df_1, df_2])
     count_tf_idf = TfidfVectorizer()
     df = count_tf_idf.fit_transform(df['name'])
