@@ -40,9 +40,9 @@ def lemmatize_text(text):
 
 # векторизация названий
 def vectoriz(marketing_dealerprice, marketing_product):
-    df_1 = marketing_dealerprice[['product_name']]
+    df_1 = marketing_dealerprice[['product_name_lem']]
     df_1 = df_1.rename(columns={'product_name': 'name'})
-    df_2 = marketing_product[['name']]
+    df_2 = marketing_product[['name_lem']]
     df = pd.concat([df_1, df_2])
     count_tf_idf = TfidfVectorizer()
     df = count_tf_idf.fit_transform(df['name'])
@@ -66,31 +66,9 @@ def top_k_names(df, name, top_k):
 
 
 
-# рассчет и вывод метрики acuracy
-def match_metrik(df, top_k, marketing_productdealerkey):
-    df = df[list(set(df.columns))]
-    df.columns = df.columns.astype(str)
-    matches = []
-    for col in set(df.columns):  
-        top_cands = df.loc[:, col].sort_values(ascending=True)[:top_k].index.tolist()
-        product_key = ''.join(col.split('_')[:-1])
-        # print(product_key)
-        if  marketing_productdealerkey.loc[marketing_productdealerkey['key'] == product_key].shape[0] == 0:
-            matches.append(0)
-            continue
-        match_id = marketing_productdealerkey.loc[marketing_productdealerkey['key'] == product_key, 'product_id'].values[0]
-        if match_id in top_cands:
-            matches.append(1)
-        else:
-            matches.append(0)          
-    print(f'accuracy = {np.mean(matches)}')
-
-
-
-
 marketing_dealer, marketing_dealerprice, marketing_product, marketing_productdealerkey = read_data(path)
-marketing_dealerprice['product_name'] = marketing_dealerprice['product_name'].apply(lemmatize_text)
-marketing_product['name'] = marketing_product['name'].apply(lemmatize_text)
+marketing_dealerprice['product_name_lem'] = marketing_dealerprice['product_name'].apply(lemmatize_text)
+marketing_product['name_lem'] = marketing_product['name'].apply(lemmatize_text)
 df_1, df_2 = vectoriz(marketing_dealerprice, marketing_product)
 df = matching_names(marketing_product, marketing_dealerprice, df_1, df_2)
 
